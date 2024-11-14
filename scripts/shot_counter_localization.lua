@@ -16,12 +16,28 @@ local loc = {
     },
     group_pattern = {
         en = "Weapon Patterns"
-    }
+    },
+    base_shot_type = {
+        en = ""
+    },
+    base_min_ammo = {
+        en = "Minimum Shot Count"
+    },
+    base_max_ammo = {
+        en = "Maximum Shot Count"
+    },
+    base_dynamic_ammo = {
+        en = "Dynamic Shot Count"
+    },
 }
 
 for id, pattern in pairs(PATTERNS) do
     loc["enable_" .. id] = {}
     loc["enable_" .. id][Managers.localization._language] = Localize(pattern.display_name)
+    loc["shot_type_" .. id] = {}
+    for lang, localized in pairs(loc.base_shot_type) do
+        loc["shot_type_" .. id][lang] = localized
+    end
 end
 
 return loc
