@@ -3,60 +3,81 @@ local UISettings = require("scripts/settings/ui/ui_settings")
 local WeaponTemplates = require("scripts/settings/equipment/weapon_templates/weapon_templates")
 local PATTERNS = UISettings.weapon_patterns
 
-mod.pattern_settings = {}
+mod.template_settings = {}
 
 create_pattern_widgets = function()
     local widget_table = {}
-    for id, pattern in pairs(PATTERNS) do
-        local name = pattern and pattern.marks and pattern.marks[1] and pattern.marks[1].name
-        local weapon_template = WeaponTemplates[name]
+    for _, pattern in pairs(PATTERNS) do
+        for _, template in pairs(pattern.marks) do
+            local id = template.name
+            local weapon_template = WeaponTemplates[id]
 
-        local has_min_max_ammo = false
-        local has_expensive_ammo = false
-        for _, action in pairs(weapon_template.actions) do
-            if action.ammunition_usage_min and action.ammunition_usage_max then
-                has_min_max_ammo = true
-                has_expensive_ammo = true
-                goto ammo_exit
+            if not weapon_template then
+                --mod:dtf(WeaponTemplates, "Templatessssss", 1)
+                goto continue
             end
-            if action.ammunition_usage and action.ammunition_usage > 1 then
-                has_expensive_ammo = true
-            end
-        end
-        ::ammo_exit::
 
-        local is_ranged = false
-        for _, keyword in pairs(weapon_template.keywords) do
-            if keyword and keyword == "ranged" then
-                is_ranged = true
-                goto ranged_exit
-            end
-        end
-        ::ranged_exit::
+            local min = 1000
+            local max = 0
 
-        if is_ranged and has_expensive_ammo then
-            widget_table[#widget_table+1] =
-            {
-                setting_id    = "enable_" .. id,
-                type          = "checkbox",
-                default_value = true,
-            }
-            if has_min_max_ammo then
-            widget_table[#widget_table+1] = 
+            for __, action in pairs(weapon_template.actions) do
+                if action.ammunition_usage_min and action.ammunition_usage_max then
+                    if min > action.ammunition_usage_min then
+                        min = action.ammunition_usage_min
+                    end
+                    if max < action.ammunition_usage_max then
+                        max = action.ammunition_usage_max
+                    end
+                end
+                if action.ammunition_usage then
+                    if min > action.ammunition_usage then
+                        min = action.ammunition_usage
+                    end
+                    if max < action.ammunition_usage then
+                        max = action.ammunition_usage
+                    end
+                end
+            end
+
+            local has_ammo_range = (max - min) ~= 0 and (max - min) ~= -1000 or max > 1
+
+            local is_ranged = false
+            for _, keyword in pairs(weapon_template.keywords) do
+                if keyword and keyword == "ranged" then
+                    is_ranged = true
+                    goto ranged_exit
+                end
+            end
+            ::ranged_exit::
+
+            if is_ranged and has_ammo_range then
+                widget_table[#widget_table+1] =
                 {
-                    setting_id = "shot_type_" .. id,
-                    type = "dropdown",
-                    default_value = "dynamic",
-                    options = {
-                        { text = "base_dynamic_ammo", value = "dynamic" },
-                        { text = "base_max_ammo", value = "min" },
-                        { text = "base_min_ammo", value = "max" },
-                    },
+                    setting_id    = "enable_" .. id,
+                    type          = "checkbox",
+                    default_value = true,
                 }
+                if (max-min) > 0 then
+                    widget_table[#widget_table+1] = 
+                    {
+                        setting_id = "shot_type_" .. id,
+                        type = "dropdown",
+                        default_value = "dynamic",
+                        options = {
+                            { text = "base_dynamic_ammo", value = "dynamic" },
+                            { text = "base_max_ammo", value = "min" },
+                            { text = "base_min_ammo", value = "max" },
+                        },
+                    }
+                end
+                mod.template_settings[id] = {}
+                mod.template_settings[id].setting_id = "enable_" .. id
+                mod.template_settings[id].shot_type = "shot_type_" .. id
+                mod.template_settings[id].min = min
+                mod.template_settings[id].max = max
+                mod.template_settings[id].has_ammo_range = has_ammo_range
             end
-            mod.pattern_settings[id] = {}
-            mod.pattern_settings[id].setting_id = "enable_" .. id
-            mod.pattern_settings[id].shot_type = "shot_type_" .. id
+            ::continue::
         end
     end
     return widget_table

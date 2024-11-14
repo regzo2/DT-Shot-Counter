@@ -12,7 +12,7 @@ local loc = {
         en = "Shot Counter",
     },
     mod_description = {
-        en = "Shows the shots left on a weapon that uses more than one ammo per shot.",
+        en = "Scales ammo counters based on the amount of ammo per shot.",
     },
     group_pattern = {
         en = "Weapon Patterns"
@@ -31,12 +31,15 @@ local loc = {
     },
 }
 
-for id, pattern in pairs(PATTERNS) do
-    loc["enable_" .. id] = {}
-    loc["enable_" .. id][Managers.localization._language] = Localize(pattern.display_name)
-    loc["shot_type_" .. id] = {}
-    for lang, localized in pairs(loc.base_shot_type) do
-        loc["shot_type_" .. id][lang] = localized
+for _, pattern in pairs(PATTERNS) do
+    for _, mark in pairs(pattern.marks) do
+        local id = mark.name
+        loc["enable_" .. id] = {}
+        loc["enable_" .. id][Managers.localization._language] = Localize("loc_weapon_family_" .. mark.name) .. " " .. Localize("loc_weapon_mark_" .. mark.name)
+        loc["shot_type_" .. id] = {}
+        for lang, localized in pairs(loc.base_shot_type) do
+            loc["shot_type_" .. id][lang] = localized
+        end
     end
 end
 
